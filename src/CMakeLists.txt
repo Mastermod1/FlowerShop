@@ -1,0 +1,3 @@
+set(BINARY ${CMAKE_PROJECT_NAME})
+
+add_executable(${BINARY}_APP main.cpp)
