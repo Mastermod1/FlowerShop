@@ -2,6 +2,7 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 
 int main()
@@ -15,8 +16,8 @@ int main()
 
     sockaddr_in server_address;
     server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(8080);
-    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(2137);
+    server_address.sin_addr.s_addr = inet_addr("127.0.0.1");
     connect(socket_fd, (struct sockaddr*)&server_address, sizeof(server_address));
     
     char c;
