@@ -43,14 +43,13 @@ private:
   void producer(int id) {
     for (;;) {
       auto msg = communication_->read();
-      if (msg == g_stop_msg) {
-        break;
-      }
       std::unique_lock lck(mtx_);
       if (storage_.size() >= g_storage_size)
         cv_.wait(lck, [this] { return storage_.size() < g_storage_size; });
-      std::cout << "Produced[" << id << "]: " << msg << "\n";
-      storage_.push(msg);
+      for (auto &x : msg) {
+        std::cout << "Produced[" << id << "]: " << x << "\n";
+        storage_.push(x);
+      }
       cv_.notify_all();
     }
     stop_consumers_ = true;
