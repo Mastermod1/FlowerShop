@@ -11,7 +11,7 @@
 
 class SocketCommunication : public ICommunication {
 public:
-  void init() {
+  void setupListeningSocket() {
     server_fd_ = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd_ == -1) {
       std::cout << "Socket " << server_fd_ << "\n";
@@ -34,10 +34,16 @@ public:
 
   void waitForClient() {
     client_fd_ = accept(server_fd_, nullptr, nullptr);
-    std::cout << "Accepted client:  " <<  client_fd_ << "\n";
+    std::cout << "Accepted client:  " << client_fd_ << "\n";
   }
 
-  char read() {
+  int setup() override {
+    setupListeningSocket();
+    waitForClient();
+    return 1;
+  }
+
+  char read() override {
     std::uint8_t buffer[1] = {0};
     int len = recv(client_fd_, buffer, sizeof(buffer), 0);
     if (len == 0 or buffer[0] == g_stop_msg) {

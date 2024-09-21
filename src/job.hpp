@@ -10,6 +10,9 @@ public:
     template<typename... Args>
     Job(std::string job_name, Args&&... args) : job_name_(std::move(job_name)), thread_(std::forward<Args>(args)...) {}
 
+    Job& operator=(const Job&) = delete;
+    Job(const Job&) = delete;
+
     ~Job()
     {
         thread_.join();
