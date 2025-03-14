@@ -1,0 +1,16 @@
+## Order Center
+- This is the store that customers enter and place orders from registers where a employee awaits them  
+- There are 5 Registers (Cashiers) (different threads)  
+- Only Two employees(Simon and Simon -> Simons) call to the Warehouse for to place orders  
+- Simons read from the queue and calls the warehouse ensuring the order is placed  
+- The order queue is a shared resource amongst cashiers and simon  
+- Orders are collected in a local cached queue  
+- Each order is a request to Warehouse  
+- Response is received once the order is delivered to Warehouse (not when it's delivered)  
+- Each Simon can make 1 phone-call at a time  
+- Since each simon has a different phone line, they have different clients  
+- producer-consumer is implemented with a semaphore(number of simons)  
+- When an order is placed and each simon is talking, order waits for a simon to call the warehouse and get an approval  
+- This is a blocking operation
+- https://medium.com/coderscorner/tale-of-client-server-and-socket-a6ef54a74763
+- https://github.com/cpuguy83/blog/blob/master/_posts/2019-02-18-non-blocking-io-in-go.md
