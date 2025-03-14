@@ -7,12 +7,6 @@
 #include <semaphore>
 #include <thread>
 
-class Wearhouse
-{
-  public:
-    void notify(std::string msg) { std::cout << "Notified wearhouse: " << msg << std::endl; }
-};
-
 struct Order
 {
     std::string what;
@@ -25,6 +19,50 @@ constexpr int numberOfSimons = 2;
 std::counting_semaphore<numberOfSimons> simonsSemaphore(numberOfSimons);
 std::mutex queueMtx;
 std::mutex coutMtx;
+
+class Wearhouse  // Dan
+{
+  public:
+    Wearhouse()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            cars.push_back(std::thread([]() { std::cout << "Carrr" << std::endl; }));
+        }
+    }
+
+    ~Wearhouse()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            cars[i].join();
+        }
+    }
+
+    void notify(Order order)
+    {
+        {
+            std::lock_guard<std::mutex> lock(wearhouseMtx);
+            orders_.push(order);
+        }
+        coutMtx.lock();
+        std::cout << "Notified wearhouse with order: " << order.what << std::endl;
+        coutMtx.unlock();
+    }
+
+    void check()
+    {
+        // If the random estimated time is 3 seconds, Dan gets mad if it's delivered in 1.2 times
+        // Estimated 3.6seconds
+    }
+
+  private:
+    std::queue<Order> orders_;
+    std::vector<std::thread> cars;
+    std::mutex wearhouseMtx;
+};
+
+Wearhouse wearhouse;
 
 class Consumer
 {
@@ -46,13 +84,13 @@ class Consumer
                     [](const Order order)
                     {
                         coutMtx.lock();
-                        std::cout << "Simon calls for order: " + order.what << std::endl;
+                        std::cout << "Simon calls wearhouse with order: " + order.what << std::endl;
                         coutMtx.unlock();
+                        wearhouse.notify(order);
                         simonsSemaphore.release();
                     },
                     order);
                 simon.detach();
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             else
             {
