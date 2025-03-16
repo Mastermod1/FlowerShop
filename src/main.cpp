@@ -1,24 +1,21 @@
 #include <chrono>
+#include <condition_variable>
 #include <iostream>
 #include <mutex>
 #include <queue>
-#include <random>
 #include <ranges>
 #include <semaphore>
 #include <thread>
+#include "random_number_generator.hpp"
+#include "sprint.hpp"
+
+constexpr int numberOfCashiers = 5;
+constexpr int numberOfSimons = 2;
 
 struct Order
 {
     std::string what;
 };
-
-// shared for cashiers and simons
-std::queue<Order> orders;
-constexpr int numberOfCashiers = 5;
-constexpr int numberOfSimons = 2;
-std::counting_semaphore<numberOfSimons> simonsSemaphore(numberOfSimons);
-std::mutex queueMtx;
-std::mutex coutMtx;
 
 class Wearhouse  // Dan
 {
@@ -27,7 +24,7 @@ class Wearhouse  // Dan
     {
         for (int i = 0; i < 5; i++)
         {
-            cars.push_back(std::thread([]() { std::cout << "Carrr" << std::endl; }));
+            cars.push_back(std::thread([]() { sprint("Carrr"); }));
         }
     }
 
@@ -45,9 +42,7 @@ class Wearhouse  // Dan
             std::lock_guard<std::mutex> lock(wearhouseMtx);
             orders_.push(order);
         }
-        coutMtx.lock();
-        std::cout << "Notified wearhouse with order: " << order.what << std::endl;
-        coutMtx.unlock();
+        sprint("Notified wearhouse with order: {}", order.what);
     }
 
     void check()
@@ -62,85 +57,87 @@ class Wearhouse  // Dan
     std::mutex wearhouseMtx;
 };
 
-Wearhouse wearhouse;
-
-class Consumer
+class OrderManager
 {
   public:
-    void operator()(int id)
+    OrderManager(const std::shared_ptr<Wearhouse>& wearhouse) : wearhouse_(wearhouse) {}
+    void start()
     {
-        while (true)
+        if (wearhouse_ == nullptr)
         {
-            std::unique_lock<std::mutex> lock(queueMtx);
-            coutMtx.lock();
-            std::cout << "INFO:  QSIZE " << orders.size() << std::endl;
-            coutMtx.unlock();
-            if (orders.size() > 0 and simonsSemaphore.try_acquire())
-            {
-                auto order = orders.front();
-                orders.pop();
-                lock.unlock();
-                std::thread simon(
-                    [](const Order order)
-                    {
-                        coutMtx.lock();
-                        std::cout << "Simon calls wearhouse with order: " + order.what << std::endl;
-                        coutMtx.unlock();
-                        wearhouse.notify(order);
-                        simonsSemaphore.release();
-                    },
-                    order);
-                simon.detach();
-            }
-            else
-            {
-                lock.unlock();
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
+            std::cerr << "Nullptr on wearhouse" << std::endl;
+            exit(0);
         }
+        std::vector<std::thread> cashiers;
+        std::thread consumer(&OrderManager::orderHandler, this);
+        for (const auto& i : std::views::iota(0, numberOfCashiers))
+        {
+            cashiers.push_back(std::thread(&OrderManager::registerHandler, this, i));
+        }
+        for (auto& cashier : cashiers)
+        {
+            cashier.join();
+        }
+        consumer.join();
     }
-};
 
-class Cashier
-{
-  public:
-    void operator()(int id)
+    void registerHandler(int id)
     {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> distrib(500, 1500);
-        coutMtx.lock();
-        std::cout << "Cashier start: " << id << std::endl;
-        coutMtx.unlock();
+        sprint("Cashier start: {}", id);
         int order_num = 0;
         while (true)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(distrib(gen)));
-            queueMtx.lock();
-            auto order = Order{"Bananas by cashier: " + std::to_string(id) + " Ord num: " + std::to_string(order_num)};
-            coutMtx.lock();
-            std::cout << "Make order: " << order.what << std::endl;
-            coutMtx.unlock();
-            orders.push(order);
-            queueMtx.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(RandomGenerator::generate<500, 1500>()));
+            auto order = Order{std::format("Bananas by cashier: {} Ord num: {}", id, order_num)};
+            sprint("Make order: {}", order.what);
+            queue_push(order);
             order_num++;
         }
     }
+
+    void orderHandler()
+    {
+        while (true)
+        {
+            std::unique_lock<std::mutex> lock(queueMtx_);
+            queueCondVar_.wait(lock, [this] { return !orders_.empty() and simonsSemaphore_.try_acquire(); });
+            sprint("INFO: order count {}", orders_.size());
+            auto order = orders_.front();
+            orders_.pop();
+            lock.unlock();
+            std::thread simon(
+                [this](const Order order)
+                {
+                    sprint("Simon calls wearhouse with order: {}", order.what);
+                    wearhouse_->notify(order);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(RandomGenerator::generate<100, 300>()));
+                    simonsSemaphore_.release();
+                    queueCondVar_.notify_one();
+                },
+                order);
+            simon.detach();
+        }
+    }
+
+    void queue_push(const Order& order)
+    {
+        std::unique_lock<std::mutex> lock(queueMtx_);
+        orders_.push(order);
+        queueCondVar_.notify_one();
+    }
+
+  private:
+    std::counting_semaphore<2> simonsSemaphore_{2};
+    std::mutex queueMtx_;
+    std::condition_variable queueCondVar_;
+    std::queue<Order> orders_;  // shared for cashiers and simons
+    std::shared_ptr<Wearhouse> wearhouse_;
 };
 
 int main()
 {
-    std::cout << "Hello World!" << std::endl;
-    std::vector<std::thread> cashiers;
-    for (const auto& i : std::views::iota(0, numberOfCashiers))
-    {
-        cashiers.push_back(std::thread(Cashier(), i));
-    }
-    std::thread consumer(Consumer(), 1);
-    consumer.join();
-    for (auto& cashier : cashiers)
-    {
-        cashier.join();
-    }
+    auto wearhouse = std::make_shared<Wearhouse>();
+    OrderManager queue_manager_(wearhouse);
+    queue_manager_.start();
     return 0;
 }
