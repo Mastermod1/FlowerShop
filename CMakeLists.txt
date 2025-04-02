@@ -3,25 +3,39 @@ project(FlowerShop)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_COMPILER g++-13)
+set(CMAKE_CXX_COMPILER g++-14)
 
-add_executable(FlowerShop src/main.cpp)
+add_executable(Shop src/shop_main.cpp)
+add_executable(Wearhouse src/wearhouse_main.cpp)
+
+add_executable(Client src/main_socket_client.cpp)
+add_executable(Server src/main_socket_server.cpp)
 
 option(USE_SANITIZERS "Enable sanitizers for debugging" ON)
 
 if(USE_SANITIZERS)
-    target_compile_options(FlowerShop PRIVATE 
+    target_compile_options(Shop PRIVATE 
+        -g
         -fsanitize=thread
         -fsanitize=undefined
     )
-    target_link_options(FlowerShop PRIVATE 
+    target_link_options(Shop PRIVATE 
+        -g
+        -fsanitize=thread
+        -fsanitize=undefined
+    )
+
+    target_compile_options(Wearhouse PRIVATE 
+        -g
+        -fsanitize=thread
+        -fsanitize=undefined
+    )
+    target_link_options(Wearhouse PRIVATE 
+        -g
         -fsanitize=thread
         -fsanitize=undefined
     )
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer")
-
-set(CMAKE_BUILD_TYPE Debug)
-
-target_include_directories(FlowerShop PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(Shop PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(Wearhouse PRIVATE ${CMAKE_SOURCE_DIR}/src)

@@ -1,18 +1,28 @@
-#include <chrono>
-#include <climits>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <condition_variable>
+#include <cstring>
 #include <future>
 #include <list>
 #include <mutex>
 #include <queue>
-#include <semaphore>
 #include <thread>
 
 #include "random_number_generator.hpp"
 #include "sprint.hpp"
 
-std::atomic<int> num_of_sent_orders = 0;
-std::atomic<int> num_of_received_orders = 0;
+#define MAX_EVENTS 100
+#define PORT 8080
+
+void set_nonblocking(int sock)
+{
+    int flags = fcntl(sock, F_GETFL, 0);
+    fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+}
 
 struct Order
 {
@@ -22,10 +32,7 @@ struct Order
 class Wearhouse
 {
   public:
-    Wearhouse()
-    {
-        // buildTrucks();
-    }
+    Wearhouse() { buildTrucks(); }
 
     void buildTrucks()
     {
@@ -46,14 +53,60 @@ class Wearhouse
 
     void close() { is_working_wearhouse_.store(false); }
 
-    void notify(Order order)
+    void runServer()
     {
+        int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+        sockaddr_in address{};
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = INADDR_ANY;
+        address.sin_port = htons(PORT);
+        bind(server_fd, (sockaddr*)&address, sizeof(address));
+        listen(server_fd, SOMAXCONN);
+        set_nonblocking(server_fd);
+
+        int epoll_fd = epoll_create1(0);
+        epoll_event event{}, events[MAX_EVENTS];
+        event.data.fd = server_fd;
+        event.events = EPOLLIN;
+        epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event);
+
+        int clients = 0;
+        while (clients < 2)
         {
-            // loop read socket
-            std::lock_guard<std::mutex> lock(dan_orders.queue_mtx_);
-            dan_orders.orders_.push(order);
+            int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+            for (int i = 0; i < n; ++i)
+            {
+                if (events[i].data.fd == server_fd)
+                {
+                    sockaddr_in client_addr;
+                    socklen_t client_len = sizeof(client_addr);
+                    int client_fd = accept(server_fd, (sockaddr*)&client_addr, &client_len);
+                    set_nonblocking(client_fd);
+                    event.data.fd = client_fd;
+                    event.events = EPOLLIN | EPOLLET;
+                    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
+                }
+                else
+                {
+                    char buffer[1024] = {0};
+                    int bytes_read = read(events[i].data.fd, buffer, sizeof(buffer));
+                    if (bytes_read <= 0)
+                    {
+                        sprint("close");
+                        ::close(events[i].data.fd);
+                        clients++;
+                    }
+                    else
+                    {
+                        std::lock_guard<std::mutex> lock(dan_orders.queue_mtx_);
+                        dan_orders.orders_.push(Order{buffer});
+                        dan_orders.queue_cv_.notify_one();
+                        sprint("Dan received order: {}", buffer);
+                    }
+                }
+            }
         }
-        dan_orders.queue_cv_.notify_one();
+        ::close(server_fd);
     }
 
   private:
@@ -91,6 +144,7 @@ class Wearhouse
 
         void task()
         {
+            int order_cntr = 0;
             while (true)
             {
                 {
@@ -122,12 +176,13 @@ class Wearhouse
 
                 for (const auto& order : tmp)
                 {
-                    num_of_received_orders++;
+                    order_cntr++;
                     if (order.actual_delivery > order.estimated_time * 1.2)
                         sprint("Angry Dan: estimated: {} actual: {}", order.estimated_time, order.actual_delivery);
                     else
                         sprint("Happy Dan: estimated: {} actual: {}", order.estimated_time, order.actual_delivery);
                 }
+                sprint("Dan received {} orders", order_cntr);
             }
         }
 
@@ -197,96 +252,8 @@ class Wearhouse
     std::atomic<bool> is_working_wearhouse_ = true;
 };
 
-constexpr int numberOfCashiers = 5;
-constexpr int numberOfSimons = 2;
-
-std::mutex simons_queue;
-std::counting_semaphore<numberOfSimons> simons_semaphore(numberOfSimons);
-
-class Simon
-{
-  public:
-    Simon(std::shared_ptr<Wearhouse> wearhouse) : wearhouse_(wearhouse) {}
-
-    void sendOrder(Order order) { wearhouse_->notify(order); }
-
-  private:
-    std::shared_ptr<Wearhouse> wearhouse_;
-};
-
-class Cashier
-{
-  public:
-    Cashier(int id, std::queue<std::unique_ptr<Simon>>& simons) : id_(id), simons_(simons)
-    {
-        thread = std::thread(&Cashier::task, this);
-    }
-
-    void task()
-    {
-        while (is_open_)
-        {
-            Order order{std::format("Order from cashier: {}", id_)};
-            std::this_thread::sleep_for(std::chrono::milliseconds(RandomGenerator::generate<1000, 1500>()));
-
-            simons_semaphore.acquire();
-            std::unique_ptr<Simon> simon;
-
-            {
-                std::lock_guard<std::mutex> lock(simons_queue);
-                simon = std::move(simons_.front());
-                simons_.pop();
-            }
-
-            sprint("Make order: {}", order.what);
-            num_of_sent_orders++;
-            simon->sendOrder(order);
-
-            {
-                std::lock_guard<std::mutex> lock(simons_queue);
-                simons_.push(std::move(simon));
-            }
-
-            simons_semaphore.release();
-        }
-    }
-    void end() { is_open_.store(false); }
-
-    ~Cashier() { thread.join(); }
-
-  private:
-    int id_;
-    std::queue<std::unique_ptr<Simon>>& simons_;
-    std::atomic<bool> is_open_ = true;
-    std::thread thread;
-};
-
 int main()
 {
-    {
-        auto wearhouse = std::make_shared<Wearhouse>();
-
-        std::queue<std::unique_ptr<Simon>> simons;
-        for (int i = 0; i < numberOfSimons; i++)
-        {
-            simons.push(std::make_unique<Simon>(wearhouse));
-        }
-        wearhouse->buildTrucks();
-
-        std::vector<std::unique_ptr<Cashier>> cashiers;
-        for (int i = 0; i < numberOfCashiers; i++)
-        {
-            cashiers.push_back(std::make_unique<Cashier>(i, simons));
-        }
-
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        for (int i = 0; i < numberOfCashiers; i++)
-        {
-            sprint("Close cashier i: {}", i);
-            cashiers[i]->end();
-        }
-    }
-    sprint("Received {} Sent {}", num_of_received_orders.load(), num_of_sent_orders.load());
-
-    return 0;
+    Wearhouse wearhouse;
+    wearhouse.runServer();
 }
