@@ -3,7 +3,6 @@ project(FlowerShop)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_COMPILER g++-13)
 
 add_executable(Shop src/shop_main.cpp)
 add_executable(Wearhouse src/wearhouse_main.cpp)

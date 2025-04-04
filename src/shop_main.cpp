@@ -2,14 +2,15 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <chrono>
 #include <climits>
-#include <cstring>
 #include <iostream>
 #include <mutex>
 #include <queue>
 #include <semaphore>
 #include <thread>
+#include <vector>
 
 #include "common/random_number_generator.hpp"
 #include "common/sprint.hpp"
