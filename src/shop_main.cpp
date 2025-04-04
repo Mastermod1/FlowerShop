@@ -11,10 +11,12 @@
 #include <semaphore>
 #include <thread>
 
-#include "random_number_generator.hpp"
-#include "sprint.hpp"
+#include "common/random_number_generator.hpp"
+#include "common/sprint.hpp"
 
 #define PORT 8080
+
+std::string LOG_FILE = "log_shop.txt";
 
 struct Order
 {
@@ -45,13 +47,20 @@ class Simon
         }
     }
 
-    ~Simon() { close(sock_); }
+    ~Simon()
+    {
+        close(sock_);
+        sprint(__FILE_NAME__, "Simon sent ", sent_msgs_, " messages");
+    }
 
     void sendOrder(Order order)
     {
         send(sock_, order.what.c_str(), order.what.length(), 0);
+        sent_msgs_++;
     }
-private:
+
+  private:
+    int sent_msgs_ = 0;
     int sock_;
 };
 
@@ -67,7 +76,7 @@ class Cashier
     {
         while (is_open_)
         {
-            Order order{std::format("Order from cashier: {}", id_)};
+            Order order{"Order from cashier: " + std::to_string(id_)};
             std::this_thread::sleep_for(std::chrono::milliseconds(RandomGenerator::generate<1000, 1500>()));
 
             simons_semaphore.acquire();
@@ -79,7 +88,6 @@ class Cashier
                 simons_.pop();
             }
 
-            sprint("Make order: {}", order.what);
             simon->sendOrder(order);
 
             {
@@ -88,6 +96,8 @@ class Cashier
             }
 
             simons_semaphore.release();
+
+            sprint(__FILE_NAME__, "Make order: ", order.what);
         }
     }
     void end() { is_open_.store(false); }
@@ -119,7 +129,7 @@ int main()
         std::this_thread::sleep_for(std::chrono::seconds(5));
         for (int i = 0; i < numberOfCashiers; i++)
         {
-            sprint("Close cashier i: {}", i);
+            sprint(__FILE_NAME__, "Close cashier i: ", i);
             cashiers[i]->end();
         }
     }

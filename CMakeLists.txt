@@ -3,13 +3,13 @@ project(FlowerShop)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_COMPILER g++-14)
+set(CMAKE_CXX_COMPILER g++-13)
 
 add_executable(Shop src/shop_main.cpp)
 add_executable(Wearhouse src/wearhouse_main.cpp)
 
-add_executable(Client src/main_socket_client.cpp)
-add_executable(Server src/main_socket_server.cpp)
+# add_executable(Client src/main_socket_client.cpp)
+# add_executable(Server src/main_socket_server.cpp)
 
 option(USE_SANITIZERS "Enable sanitizers for debugging" ON)
 
@@ -37,5 +37,5 @@ if(USE_SANITIZERS)
     )
 endif()
 
-target_include_directories(Shop PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_include_directories(Wearhouse PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(Shop PRIVATE ${CMAKE_SOURCE_DIR}/src/common)
+target_include_directories(Wearhouse PRIVATE ${CMAKE_SOURCE_DIR}/src/common)
