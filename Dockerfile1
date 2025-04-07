@@ -1,0 +1,22 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set up working directory
+WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y \
+    build-essential \
+    g++-12 \
+    cmake
+
+# Copy the binary or build it if necessary
+COPY . /app
+
+RUN mkdir -p /app/build
+
+RUN cd /app/build && cd /app/build && cmake .. && make
+
+# Command to run the binary (modify this if needed)
+CMD ["/app/build/Shop"]

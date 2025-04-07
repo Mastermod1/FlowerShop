@@ -1,0 +1,30 @@
+version: '3.3'
+
+services:
+  binary2:
+    build:
+      context: .   # Path to the folder containing the Dockerfile for binary2
+      dockerfile: Dockerfile2
+    container_name: binary2-container
+    command: /app/build/Wearhouse  # Command to run the binary2
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.2
+  binary1:
+    build:
+      context: .   # Path to the folder containing the Dockerfile for binary1
+      dockerfile: Dockerfile1
+    container_name: binary1-container
+    entrypoint: ["sh", "-c", "sleep 10 && /app/build/Shop"]  # Sleep for 10 seconds before starting
+    depends_on:
+      - binary2
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.3
+
+networks:
+  mynetwork:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.18.0.0/16"

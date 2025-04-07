@@ -18,6 +18,7 @@
 #define PORT 8080
 
 std::string LOG_FILE = "log_shop.txt";
+std::string LOG_TITLE = "shop_main.cpp";
 
 struct Order
 {
@@ -39,7 +40,7 @@ class Simon
         sockaddr_in server_addr{};
         server_addr.sin_family = AF_INET;
         server_addr.sin_port = htons(PORT);
-        inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
+        inet_pton(AF_INET, "172.18.0.2", &server_addr.sin_addr);
 
         if (connect(sock_, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
         {
@@ -51,7 +52,7 @@ class Simon
     ~Simon()
     {
         close(sock_);
-        sprint(__FILE_NAME__, "Simon sent ", sent_msgs_, " messages");
+        sprint(LOG_TITLE, "Simon sent ", sent_msgs_, " messages");
     }
 
     void sendOrder(Order order)
@@ -98,7 +99,7 @@ class Cashier
 
             simons_semaphore.release();
 
-            sprint(__FILE_NAME__, "Make order: ", order.what);
+            sprint(LOG_TITLE, "Make order: ", order.what);
         }
     }
     void end() { is_open_.store(false); }
@@ -130,7 +131,7 @@ int main()
         std::this_thread::sleep_for(std::chrono::seconds(5));
         for (int i = 0; i < numberOfCashiers; i++)
         {
-            sprint(__FILE_NAME__, "Close cashier i: ", i);
+            sprint(LOG_TITLE, "Close cashier i: ", i);
             cashiers[i]->end();
         }
     }

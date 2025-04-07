@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -19,6 +20,7 @@
 #define PORT 8080
 
 std::string LOG_FILE = "log_wearhouse.txt";
+std::string LOG_TITLE = "wearhouse_main.cpp";
 int NUMBER_OF_SIMONS = 2;
 
 void set_nonblocking(int sock)
@@ -112,14 +114,14 @@ class DeliveryVerificator
             {
                 order_cntr++;
                 if (order.actual_delivery > order.estimated_time * 1.2)
-                    sprint(__FILE_NAME__, "Angry Dan: estimated: ", order.estimated_time,
+                    sprint(LOG_TITLE, "Angry Dan: estimated: ", order.estimated_time,
                            " actual: ", order.actual_delivery);
                 else
-                    sprint(__FILE_NAME__, "Happy Dan: estimated: ", order.estimated_time,
+                    sprint(LOG_TITLE, "Happy Dan: estimated: ", order.estimated_time,
                            " actual: ", order.actual_delivery);
             }
         }
-        sprint(__FILE_NAME__, "Received in total: ", order_cntr, " orders");
+        sprint(LOG_TITLE, "Received in total: ", order_cntr, " orders");
 
         std::unique_lock<std::mutex> lock(mtx_);
         done_ = true;
@@ -221,8 +223,8 @@ class Wearhouse
         int server_fd = socket(AF_INET, SOCK_STREAM, 0);
         sockaddr_in address{};
         address.sin_family = AF_INET;
-        address.sin_addr.s_addr = INADDR_ANY;
         address.sin_port = htons(PORT);
+        inet_pton(AF_INET, "172.18.0.2", &address.sin_addr);
         bind(server_fd, (sockaddr*)&address, sizeof(address));
         listen(server_fd, SOMAXCONN);
         set_nonblocking(server_fd);
@@ -255,7 +257,7 @@ class Wearhouse
                     int bytes_read = read(events[i].data.fd, buffer, sizeof(buffer));
                     if (bytes_read <= 0)
                     {
-                        sprint(__FILE_NAME__, "Connection with Simon closed");
+                        sprint(LOG_TITLE, "Connection with Simon closed");
                         ::close(events[i].data.fd);
                         closed_connections++;
                     }
@@ -266,7 +268,7 @@ class Wearhouse
                             orders_.orders_.push(Order{buffer});
                             orders_.cv_.notify_one();
                         }
-                        sprint(__FILE_NAME__, "Dan received order: ", buffer);
+                        sprint(LOG_TITLE, "Dan received order: ", buffer);
                     }
                 }
             }
