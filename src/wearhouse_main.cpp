@@ -1,6 +1,6 @@
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -20,8 +20,9 @@
 #define PORT 8080
 
 std::string LOG_FILE = "log_wearhouse.txt";
-std::string LOG_TITLE = "wearhouse_main.cpp";
-int NUMBER_OF_SIMONS = 2;
+const std::string LOG_TITLE = "wearhouse_main.cpp";
+const int NUMBER_OF_SIMONS = 2;
+const std::string IP_ADDR = "127.0.0.1";
 
 void set_nonblocking(int sock)
 {
@@ -132,6 +133,7 @@ class DeliveryVerificator
     {
         is_finished_.store(true);
         {
+            // could be also handled with promise future
             std::unique_lock<std::mutex> lock(mtx_);
             cv_.wait(lock, [this] { return done_ == true; });
         }
@@ -155,6 +157,13 @@ class Truck
         : orders_(orders), future_orders_(future_orders)
     {
         thread_ = std::thread(&Truck::work, this);
+    }
+
+    ~Truck()
+    {
+        is_finished_.store(true);
+        orders_.cv_.notify_all();
+        if (thread_.joinable()) thread_.join();
     }
 
     void work()
@@ -188,10 +197,6 @@ class Truck
         }
     }
 
-    void release() { is_finished_.store(true); }
-
-    ~Truck() { thread_.join(); }
-
   private:
     ProducerConsumerOrders& orders_;
     StartedFutureOrders& future_orders_;
@@ -212,8 +217,6 @@ class Wearhouse
 
     ~Wearhouse()
     {
-        for (auto& x : trucks_) (*x).release();
-        orders_.cv_.notify_all();
         trucks_.clear();
         verificator_.release();
     }
@@ -224,7 +227,7 @@ class Wearhouse
         sockaddr_in address{};
         address.sin_family = AF_INET;
         address.sin_port = htons(PORT);
-        inet_pton(AF_INET, "172.18.0.2", &address.sin_addr);
+        inet_pton(AF_INET, IP_ADDR.c_str(), &address.sin_addr);
         bind(server_fd, (sockaddr*)&address, sizeof(address));
         listen(server_fd, SOMAXCONN);
         set_nonblocking(server_fd);
