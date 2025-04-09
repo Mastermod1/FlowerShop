@@ -1,25 +1,22 @@
 #pragma once
 
-#include <fstream>
 #include <mutex>
+#include <iostream>
+#include <sstream>
 
-extern std::string LOG_FILE;
-
-static std::mutex coutMtx;
-
-static std::ostream& getFile()
+static void log(std::string msg)
 {
-    static std::ofstream logfile(LOG_FILE, std::ios::app);
-    return logfile;
+    static std::mutex coutMtx;
+    std::lock_guard<std::mutex> lock(coutMtx);
+    std::cout << msg << std::endl;
+    std::cout.flush();
 }
 
 template <typename... T>
 void sprint(std::string who, T... args)
 {
-    std::lock_guard<std::mutex> lock(coutMtx);
-    auto& logfile = getFile();
-    logfile << "[" << who << "] ";
-    (logfile << ... << args);
-    logfile << std::endl;
-    logfile.flush();
+    std::stringstream ss;
+    ss << "[" << who << "] ";
+    (ss << ... << args);
+    log(ss.str());
 }
