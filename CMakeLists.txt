@@ -37,6 +37,6 @@ if(USE_SANITIZERS)
 endif()
 
 target_include_directories(Shop PRIVATE ${CMAKE_SOURCE_DIR}/src/common ${CMAKE_SOURCE_DIR}/src/shop)
-target_include_directories(Wearhouse PRIVATE ${CMAKE_SOURCE_DIR}/src/common)
+target_include_directories(Wearhouse PRIVATE ${CMAKE_SOURCE_DIR}/src/common ${CMAKE_SOURCE_DIR}/src/wearhouse)
 target_link_options(Shop PRIVATE -pthread)
 target_link_options(Wearhouse PRIVATE -pthread)
