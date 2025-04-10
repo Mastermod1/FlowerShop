@@ -7,10 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(Shop src/shop_main.cpp)
 add_executable(Wearhouse src/wearhouse_main.cpp)
 
-# add_executable(Client src/main_socket_client.cpp)
-# add_executable(Server src/main_socket_server.cpp)
-
-option(USE_SANITIZERS "Enable sanitizers for debugging" ON)
+option(USE_SANITIZERS "Enable sanitizers for debugging" OFF)
+message("USE_SANITIZERS is: '${USE_SANITIZERS}'")
 
 if(USE_SANITIZERS)
     target_compile_options(Shop PRIVATE 

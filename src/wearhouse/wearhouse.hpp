@@ -24,7 +24,8 @@ void set_nonblocking(int sock)
 
 const int MAX_EVENTS = 100;
 const int PORT = 8080;
-const std::string IP_ADDR = "127.0.0.1";
+const std::string IP_ADDR = "172.18.0.2";
+// const std::string IP_ADDR = "127.0.0.1";
 
 class Wearhouse
 {
@@ -35,10 +36,14 @@ class Wearhouse
         {
             trucks_.push_back(std::make_unique<Truck>(storage_, future_orders_));
         }
+        server_ = std::thread(&Wearhouse::runServer, this);
     }
 
     ~Wearhouse()
     {
+        is_finished_.store(true);
+        if (server_.joinable())
+            server_.join();
         storage_.finish();
         trucks_.clear();
         verificator_.release();
@@ -61,10 +66,10 @@ class Wearhouse
         event.events = EPOLLIN;
         epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event);
 
-        int closed_connections = 0;
-        while (true)
+        int connection_count = 0;
+        while (not is_finished_ or connection_count != 0)
         {
-            int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+            int n = epoll_wait(epoll_fd, events, MAX_EVENTS, 1000);
             for (int i = 0; i < n; ++i)
             {
                 if (events[i].data.fd == server_fd)
@@ -72,6 +77,7 @@ class Wearhouse
                     sockaddr_in client_addr;
                     socklen_t client_len = sizeof(client_addr);
                     int client_fd = accept(server_fd, (sockaddr*)&client_addr, &client_len);
+                    connection_count++;
                     set_nonblocking(client_fd);
                     event.data.fd = client_fd;
                     event.events = EPOLLIN | EPOLLET;
@@ -85,7 +91,7 @@ class Wearhouse
                     {
                         sprint("Wearhouse", "Connection with Simon closed");
                         ::close(events[i].data.fd);
-                        closed_connections++;
+                        connection_count--;
                     }
                     else
                     {
@@ -99,8 +105,10 @@ class Wearhouse
     }
 
   private:
+    std::atomic<bool> is_finished_{false};
     StartedFutureOrders future_orders_;
-    std::vector<std::unique_ptr<Truck>> trucks_;
+    std::thread server_;
     WearhouseStorage storage_;
+    std::vector<std::unique_ptr<Truck>> trucks_;
     DeliveryVerificator verificator_{future_orders_};
 };

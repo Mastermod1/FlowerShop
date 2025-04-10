@@ -1,23 +1,23 @@
 version: '3.3'
 
 services:
-  binary2:
+  wearhouse:
     build:
-      context: .   # Path to the folder containing the Dockerfile for binary2
+      context: .   # Path to the folder containing the Dockerfile for wearhouse
       dockerfile: Dockerfile2
-    container_name: binary2-container
-    command: /app/build/Wearhouse  # Command to run the binary2
+    container_name: wearhouse-container
+    command: /app/build/Wearhouse  # Command to run the wearhouse
     networks:
       mynetwork:
         ipv4_address: 172.18.0.2
-  binary1:
+  shop:
     build:
-      context: .   # Path to the folder containing the Dockerfile for binary1
+      context: .   # Path to the folder containing the Dockerfile for shop
       dockerfile: Dockerfile1
-    container_name: binary1-container
-    entrypoint: ["sh", "-c", "sleep 10 && /app/build/Shop"]  # Sleep for 10 seconds before starting
+    container_name: shop-container
+    entrypoint: ["sh", "-c", "sleep 3 && /app/build/Shop"]  # Sleep for 10 seconds before starting
     depends_on:
-      - binary2
+      - wearhouse
     networks:
       mynetwork:
         ipv4_address: 172.18.0.3

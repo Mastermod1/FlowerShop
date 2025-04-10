@@ -16,7 +16,6 @@ class Truck
 
     ~Truck()
     {
-        is_finished_.store(true);
         if (thread_.joinable()) thread_.join();
     }
 
@@ -25,7 +24,7 @@ class Truck
         while (true)
         {
             std::optional<Order> order = storage_.getNext();
-            if (not order.has_value() and is_finished_)
+            if (not order.has_value())
             {
                 return;
             }
@@ -49,5 +48,4 @@ class Truck
     WearhouseStorage& storage_;
     StartedFutureOrders& future_orders_;
     std::thread thread_;
-    std::atomic<bool> is_finished_ = false;
 };
