@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <thread>
+#include <atomic>
 
 #include "common/random_number_generator.hpp"
 #include "common/sprint.hpp"

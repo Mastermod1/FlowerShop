@@ -3,7 +3,7 @@
 #include <functional>
 #include <memory>
 #include <queue>
-#include <semaphore>
+#include <semaphore/semaphore.h>
 
 #include "shop/simon.hpp"
 
@@ -41,5 +41,5 @@ class SimonsQueue
   private:
     std::queue<std::unique_ptr<Simon>> simons_;
     std::mutex mtx_;
-    std::counting_semaphore<SIZE> simons_semaphore_{SIZE};
+    cyan::counting_semaphore<SIZE> simons_semaphore_{SIZE};
 };
