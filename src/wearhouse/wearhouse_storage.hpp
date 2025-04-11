@@ -5,8 +5,8 @@
 #include <optional>
 #include <queue>
 
-#include "../common/sprint.hpp"
-#include "order.hpp"
+#include "common/sprint.hpp"
+#include "wearhouse/order.hpp"
 
 class WearhouseStorage
 {

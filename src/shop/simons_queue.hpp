@@ -5,7 +5,7 @@
 #include <queue>
 #include <semaphore>
 
-#include "simon.hpp"
+#include "shop/simon.hpp"
 
 template <std::size_t SIZE>
 class SimonsQueue

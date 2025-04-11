@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 
-#include "../common/sprint.hpp"
-#include "delivery_verificator.hpp"
-#include "truck.hpp"
-#include "wearhouse_storage.hpp"
+#include "common/sprint.hpp"
+#include "wearhouse/delivery_verificator.hpp"
+#include "wearhouse/truck.hpp"
+#include "wearhouse/wearhouse_storage.hpp"
 
 void set_nonblocking(int sock)
 {
@@ -24,8 +24,8 @@ void set_nonblocking(int sock)
 
 const int MAX_EVENTS = 100;
 const int PORT = 8080;
-const std::string IP_ADDR = "172.18.0.2";
-// const std::string IP_ADDR = "127.0.0.1";
+// const std::string IP_ADDR = "172.18.0.2";
+const std::string IP_ADDR = "127.0.0.1";
 
 class Wearhouse
 {

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "wearhouse_storage.hpp"
-#include "../common/random_number_generator.hpp"
 #include <future>
-#include "started_future_orders.hpp"
+
+#include "common/random_number_generator.hpp"
+#include "wearhouse/started_future_orders.hpp"
+#include "wearhouse/wearhouse_storage.hpp"
 
 class Truck
 {

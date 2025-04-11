@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "simons_queue.hpp"
-#include "cashier.hpp"
+#include "shop/simons_queue.hpp"
+#include "shop/cashier.hpp"
 
 constexpr int numberOfCashiers = 5;
 constexpr int numberOfSimons = 2;

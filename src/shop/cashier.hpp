@@ -3,9 +3,9 @@
 #include <memory>
 #include <thread>
 
-#include "../common/random_number_generator.hpp"
-#include "../common/sprint.hpp"
-#include "simons_queue.hpp"
+#include "common/random_number_generator.hpp"
+#include "common/sprint.hpp"
+#include "shop/simons_queue.hpp"
 
 class Cashier
 {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../common/sprint.hpp"
-#include "started_future_orders.hpp"
+#include "common/sprint.hpp"
+#include "wearhouse/started_future_orders.hpp"
 
 class DeliveryVerificator
 {
