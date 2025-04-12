@@ -5,11 +5,8 @@
 #include <unistd.h>
 
 #include "common/sprint.hpp"
+#include "common/globals.hpp"
 #include "shop/order.hpp"
-
-// const std::string IP_ADDR = "172.18.0.2";
-const std::string IP_ADDR = "127.0.0.1";
-const int PORT = 8080;
 
 class Simon
 {
