@@ -3,6 +3,7 @@
 #include <cstdlib>
 
 #include "wearhouse/wearhouse.hpp"
+#include "common/sprint.hpp"
 
 bool is_finished = false;
 
@@ -10,11 +11,11 @@ void signalHandler(int signal)
 {
     if (signal == SIGINT)
     {
-        std::cout << "\nCaught SIGINT (Ctrl+C). Cleaning up and exiting..." << std::endl;
+        sprint("WearhouseMain", "Caught SIGINT (Ctrl+C). Cleaning up and exiting...");
     }
     else if (signal == SIGTERM)
     {
-        std::cout << "\nCaught SIGTERM. Cleaning up and exiting..." << std::endl;
+        sprint("WearhouseMain", "Caught SIGTERM. Cleaning up and exiting...");
     }
 
     is_finished = true;

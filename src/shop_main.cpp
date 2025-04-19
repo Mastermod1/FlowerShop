@@ -3,6 +3,7 @@
 #include <cstdlib>
 
 #include "shop/shop.hpp"
+#include "common/sprint.hpp"
 
 bool is_finished = false;
 
@@ -10,11 +11,11 @@ void signalHandler(int signal)
 {
     if (signal == SIGINT)
     {
-        std::cout << "\nCaught SIGINT (Ctrl+C). Cleaning up and exiting..." << std::endl;
+        sprint("ShopMain", "Caught SIGINT (Ctrl+C). Cleaning up and exiting...");
     }
     else if (signal == SIGTERM)
     {
-        std::cout << "\nCaught SIGTERM. Cleaning up and exiting..." << std::endl;
+        sprint("ShopMain", "Caught SIGTERM. Cleaning up and exiting...");
     }
 
     is_finished = true;
@@ -28,7 +29,7 @@ int main()
     Shop shop;
     while (not is_finished)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     return 0;

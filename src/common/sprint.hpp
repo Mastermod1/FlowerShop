@@ -1,7 +1,8 @@
 #pragma once
 
-#include <mutex>
+#include <ctime>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 
 static void log(std::string msg)
@@ -16,7 +17,11 @@ template <typename... T>
 void sprint(std::string who, T... args)
 {
     std::stringstream ss;
-    ss << "[" << who << "] ";
+    time_t timestamp = time(NULL);
+    struct tm datetime = *localtime(&timestamp);
+    char output[50];
+    strftime(output, 50, "%H:%M:%S", &datetime);
+    ss << "[" << output << "][" << who << "] ";
     (ss << ... << args);
     log(ss.str());
 }
