@@ -1,11 +1,14 @@
 #pragma once
 
 #include <condition_variable>
+#include <future>
 #include <mutex>
 #include <optional>
 #include <queue>
 
+#include "common/random_number_generator.hpp"
 #include "common/sprint.hpp"
+#include "wearhouse/delivery_verificator.hpp"
 #include "wearhouse/order.hpp"
 
 class WearhouseStorage
@@ -16,19 +19,25 @@ class WearhouseStorage
         std::unique_lock<std::mutex> lock(mtx_);
         cv_.wait(lock, [this] { return not orders_.empty() or finished_; });
         if (orders_.empty()) return std::nullopt;
-        auto order = orders_.front();
+        auto order = std::move(orders_.front());
         orders_.pop();
-        return order;
+
+        const int estimated_time = RandomGenerator::generate<1000, 3000>();
+        order.time = estimated_time;
+
+        DeliveryVerificator verificator(order.promise_.get_future(), estimated_time);
+        return std::move(order);
     }
 
-    void insertOrder(Order order)
+    void insertOrder(Order&& order)
     {
+        std::string what = order.what;
         {
             std::lock_guard<std::mutex> lock(mtx_);
-            orders_.push(order);
+            orders_.push(std::move(order));
             cv_.notify_one();
         }
-        sprint("Wearhouse", "Dan received order: ", order.what);
+        sprint("Wearhouse", "Dan received order: ", what);
     }
 
     void finish()

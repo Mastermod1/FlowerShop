@@ -13,7 +13,6 @@
 
 #include "common/sprint.hpp"
 #include "common/globals.hpp"
-#include "wearhouse/delivery_verificator.hpp"
 #include "wearhouse/truck.hpp"
 #include "wearhouse/wearhouse_storage.hpp"
 
@@ -32,7 +31,7 @@ class Wearhouse
     {
         for (int i = 0; i < 3; i++)
         {
-            trucks_.push_back(std::make_unique<Truck>(storage_, future_orders_));
+            trucks_.push_back(std::make_unique<Truck>(storage_));
         }
         server_ = std::thread(&Wearhouse::runServer, this);
     }
@@ -44,7 +43,6 @@ class Wearhouse
             server_.join();
         storage_.finish();
         trucks_.clear();
-        verificator_.release();
     }
 
     void runServer()
@@ -104,9 +102,7 @@ class Wearhouse
 
   private:
     std::atomic<bool> is_finished_{false};
-    StartedFutureOrders future_orders_;
     std::thread server_;
     WearhouseStorage storage_;
     std::vector<std::unique_ptr<Truck>> trucks_;
-    DeliveryVerificator verificator_{future_orders_};
 };
