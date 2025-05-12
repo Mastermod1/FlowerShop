@@ -5,7 +5,7 @@
 #include "wearhouse/wearhouse.hpp"
 #include "common/sprint.hpp"
 
-bool is_finished = false;
+std::atomic<bool> is_finished = false;
 
 void signalHandler(int signal)
 {
