@@ -1,0 +1,30 @@
+version: '3.3'
+
+services:
+  warehouse:
+    build:
+      context: .   # Path to the folder containing the Dockerfile for warehouse
+      dockerfile: Dockerfile2
+    container_name: warehouse-container
+    command: /app/build/Warehouse  # Command to run the warehouse
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.2
+  shop:
+    build:
+      context: .   # Path to the folder containing the Dockerfile for shop
+      dockerfile: Dockerfile1
+    container_name: shop-container
+    entrypoint: ["sh", "-c", "sleep 3 && /app/build/Shop"]  # Sleep for 10 seconds before starting
+    depends_on:
+      - warehouse
+    networks:
+      mynetwork:
+        ipv4_address: 172.18.0.3
+
+networks:
+  mynetwork:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.18.0.0/16"
