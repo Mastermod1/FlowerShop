@@ -1,12 +1,12 @@
 version: '3.3'
 
 services:
-  wearhouse:
+  warehouse:
     build:
-      context: .   # Path to the folder containing the Dockerfile for wearhouse
+      context: .   # Path to the folder containing the Dockerfile for warehouse
       dockerfile: Dockerfile2
-    container_name: wearhouse-container
-    command: /app/build/Wearhouse  # Command to run the wearhouse
+    container_name: warehouse-container
+    command: /app/build/Warehouse  # Command to run the warehouse
     networks:
       mynetwork:
         ipv4_address: 172.18.0.2
@@ -17,7 +17,7 @@ services:
     container_name: shop-container
     entrypoint: ["sh", "-c", "sleep 3 && /app/build/Shop"]  # Sleep for 10 seconds before starting
     depends_on:
-      - wearhouse
+      - warehouse
     networks:
       mynetwork:
         ipv4_address: 172.18.0.3

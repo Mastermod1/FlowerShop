@@ -13,8 +13,8 @@
 
 #include "common/sprint.hpp"
 #include "common/globals.hpp"
-#include "wearhouse/truck.hpp"
-#include "wearhouse/wearhouse_storage.hpp"
+#include "warehouse/truck.hpp"
+#include "warehouse/warehouse_storage.hpp"
 
 void set_nonblocking(int sock)
 {
@@ -24,19 +24,19 @@ void set_nonblocking(int sock)
 
 const int MAX_EVENTS = 100;
 
-class Wearhouse
+class Warehouse
 {
   public:
-    Wearhouse()
+    Warehouse()
     {
         for (int i = 0; i < 3; i++)
         {
             trucks_.push_back(std::make_unique<Truck>(storage_));
         }
-        server_ = std::thread(&Wearhouse::runServer, this);
+        server_ = std::thread(&Warehouse::runServer, this);
     }
 
-    ~Wearhouse()
+    ~Warehouse()
     {
         is_finished_.store(true);
         if (server_.joinable())
@@ -85,7 +85,7 @@ class Wearhouse
                     int bytes_read = read(events[i].data.fd, buffer, sizeof(buffer));
                     if (bytes_read <= 0)
                     {
-                        sprint("Wearhouse", "Connection with Simon closed");
+                        sprint("Warehouse", "Connection with Simon closed");
                         ::close(events[i].data.fd);
                         connection_count--;
                     }
@@ -103,6 +103,6 @@ class Wearhouse
   private:
     std::atomic<bool> is_finished_{false};
     std::thread server_;
-    WearhouseStorage storage_;
+    WarehouseStorage storage_;
     std::vector<std::unique_ptr<Truck>> trucks_;
 };

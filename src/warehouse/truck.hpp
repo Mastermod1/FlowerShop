@@ -2,12 +2,12 @@
 
 #include <future>
 
-#include "wearhouse/wearhouse_storage.hpp"
+#include "warehouse/warehouse_storage.hpp"
 
 class Truck
 {
   public:
-    Truck(WearhouseStorage& storage)
+    Truck(WarehouseStorage& storage)
         : storage_(storage)
     {
         thread_ = std::thread(&Truck::work, this);
@@ -36,6 +36,6 @@ class Truck
     }
 
   private:
-    WearhouseStorage& storage_;
+    WarehouseStorage& storage_;
     std::thread thread_;
 };

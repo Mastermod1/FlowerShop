@@ -4,7 +4,7 @@
 #include <list>
 #include <mutex>
 
-#include "wearhouse/order.hpp"
+#include "warehouse/order.hpp"
 
 struct LocalOrder
 {

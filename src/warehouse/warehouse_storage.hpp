@@ -8,10 +8,10 @@
 
 #include "common/random_number_generator.hpp"
 #include "common/sprint.hpp"
-#include "wearhouse/delivery_verificator.hpp"
-#include "wearhouse/order.hpp"
+#include "warehouse/delivery_verificator.hpp"
+#include "warehouse/order.hpp"
 
-class WearhouseStorage
+class WarehouseStorage
 {
   public:
     std::optional<Order> getNext()
@@ -37,7 +37,7 @@ class WearhouseStorage
             orders_.push(std::move(order));
             cv_.notify_one();
         }
-        sprint("Wearhouse", "Dan received order: ", what);
+        sprint("Warehouse", "Dan received order: ", what);
     }
 
     void finish()
@@ -46,7 +46,7 @@ class WearhouseStorage
         cv_.notify_all();
     }
 
-    ~WearhouseStorage()
+    ~WarehouseStorage()
     {
         finished_.store(true);
         cv_.notify_all();
